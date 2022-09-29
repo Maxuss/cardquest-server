@@ -1,24 +1,24 @@
-use std::path::Path;
+use crate::server::init_server;
+use crate::tg::init_tg;
+use log::LevelFilter;
 use log4rs::append::console::ConsoleAppender;
-use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
 use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
 use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
 use log4rs::append::rolling_file::RollingFileAppender;
-use log4rs::{Config, init_config};
 use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
-use log::LevelFilter;
-use serde::{Serialize, Deserialize};
+use log4rs::{init_config, Config};
+use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPoolOptions;
+use std::path::Path;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::join;
-use crate::server::init_server;
-use crate::tg::init_tg;
 
-pub mod tg;
-pub mod server;
 pub mod common;
+pub mod server;
+pub mod tg;
 
 fn prepare_logging() -> anyhow::Result<()> {
     let pattern = "[{d(%d-%m-%Y %H:%M:%S)}] {h([{l}])}: {m}\n";
@@ -34,10 +34,8 @@ fn prepare_logging() -> anyhow::Result<()> {
             Box::new(CompoundPolicy::new(
                 // 4MB
                 Box::new(SizeTrigger::new(4 * 1024)),
-                Box::new(
-                    FixedWindowRoller::builder().build("logs/old/{}.log.gz", 4)?
-                )
-            ))
+                Box::new(FixedWindowRoller::builder().build("logs/old/{}.log.gz", 4)?),
+            )),
         )?;
 
     let config = Config::builder()
@@ -64,10 +62,11 @@ async fn main() -> anyhow::Result<()> {
 
         let mut file = File::create("config.toml").await?;
         let cfg = ServerConfig::default();
-        file.write_all(toml::to_string_pretty(&cfg)?.as_bytes()).await?;
+        file.write_all(toml::to_string_pretty(&cfg)?.as_bytes())
+            .await?;
 
         log::info!("Config file was generated, make sure to fill it out!");
-        return Ok(())
+        return Ok(());
     }
 
     log::trace!("Config exists!");
@@ -87,7 +86,11 @@ async fn main() -> anyhow::Result<()> {
         .connect(&format!(
             "postgresql://{}{}@{}/{}",
             cfg.postgres.username,
-            if !cfg.postgres.password.is_empty() { format!(":{}", cfg.postgres.password) } else { "".to_string() },
+            if !cfg.postgres.password.is_empty() {
+                format!(":{}", cfg.postgres.password)
+            } else {
+                "".to_string()
+            },
             cfg.postgres.host,
             cfg.postgres.table
         ))
@@ -95,10 +98,14 @@ async fn main() -> anyhow::Result<()> {
 
     let pc = pool.clone();
     let tg_handle = tokio::spawn(async move {
-        init_tg(key, pc).await.expect("Could not initialize telegram bot!")
+        init_tg(key, pc)
+            .await
+            .expect("Could not initialize telegram bot!")
     });
     let server_handle = tokio::spawn(async move {
-        init_server(&cfg, pool).await.expect("Could not initialize server!")
+        init_server(&cfg, pool)
+            .await
+            .expect("Could not initialize server!")
     });
 
     let (tg, server) = join!(tg_handle, server_handle);
@@ -113,19 +120,19 @@ async fn main() -> anyhow::Result<()> {
 pub struct ServerConfig {
     api: ApiConfig,
     telegram: TelegramConfig,
-    postgres: PostgresConfig
+    postgres: PostgresConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiConfig {
     host: String,
     port: u64,
-    record_dev_data: bool
+    record_dev_data: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TelegramConfig {
-    api_key: String
+    api_key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -133,7 +140,7 @@ pub struct PostgresConfig {
     table: String,
     host: String,
     username: String,
-    password: String
+    password: String,
 }
 
 impl Default for ServerConfig {
@@ -142,15 +149,17 @@ impl Default for ServerConfig {
             api: ApiConfig {
                 host: "127.0.0.1".to_string(),
                 port: 4040,
-                record_dev_data: true
+                record_dev_data: true,
             },
-            telegram: TelegramConfig { api_key: "<ENTER KEY HERE>".to_string() },
+            telegram: TelegramConfig {
+                api_key: "<ENTER KEY HERE>".to_string(),
+            },
             postgres: PostgresConfig {
                 table: "cardquest".to_string(),
                 host: "localhost".to_string(),
                 username: "<USERNAME>".to_string(),
-                password: "<PASSWORD>".to_string()
-            }
+                password: "<PASSWORD>".to_string(),
+            },
         }
     }
 }

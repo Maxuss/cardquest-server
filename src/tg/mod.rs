@@ -1,9 +1,9 @@
 pub mod register;
 
+use crate::tg::register::{schema, DialogueState};
 use sqlx::PgPool;
-use teloxide::{prelude::*, utils::command::BotCommands};
 use teloxide::dispatching::dialogue::InMemStorage;
-use crate::tg::register::{DialogueState, schema};
+use teloxide::{prelude::*, utils::command::BotCommands};
 
 #[derive(BotCommands, Clone)]
 #[command(rename = "lowercase", description = "Список комманд бота:")]
