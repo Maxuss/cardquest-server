@@ -3,6 +3,42 @@ name = "cardquest-server"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+anyhow = "1.0.65"
+sha2 = "0.10.6"
+serde_json = "1.0.85"
+futures-lite = "1.12.0"
+toml = "0.5.9"
+log = "0.4.17"
+
+[dependencies.log4rs]
+version = "1.1.1"
+features = ["gzip", "console_appender", "file_appender"]
+
+[dependencies.teloxide]
+version = "0.10.1"
+features = ["macros", "auto-send"]
+
+[dependencies.sqlx]
+version = "0.6.2"
+features = [ "runtime-tokio-rustls", "postgres", "json", "chrono", "uuid"]
+
+[dependencies.chrono]
+version = "0.4.22"
+features = ["serde"]
+
+[dependencies.serde]
+version = "1.0.145"
+features = ["derive"]
+
+[dependencies.uuid]
+version = "1.1.2"
+features = ["v4"]
+
+[dependencies.tokio]
+version = "1.21.1"
+features = ["macros", "fs"]
+
+[dependencies.axum]
+version = "0.6.0-rc.2"
+features = ["headers","query"]
