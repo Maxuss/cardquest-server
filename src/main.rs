@@ -9,6 +9,7 @@ use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log::LevelFilter;
 use serde::{Serialize, Deserialize};
+use sqlx::postgres::PgPoolOptions;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::join;
@@ -17,6 +18,7 @@ use crate::tg::init_tg;
 
 pub mod tg;
 pub mod server;
+pub mod common;
 
 fn prepare_logging() -> anyhow::Result<()> {
     let pattern = "[{d(%d-%m-%Y %H:%M:%S)}] {h([{l}])}: {m}\n";
@@ -80,7 +82,26 @@ async fn main() -> anyhow::Result<()> {
 
     let key = cfg.telegram.api_key.clone();
 
-    let (tg, server) = join!(init_tg(key), init_server(&cfg));
+    let pool = PgPoolOptions::new()
+        .max_connections(4)
+        .connect(&format!(
+            "postgresql://{}{}@{}/{}",
+            cfg.postgres.username,
+            if !cfg.postgres.password.is_empty() { format!(":{}", cfg.postgres.password) } else { "".to_string() },
+            cfg.postgres.host,
+            cfg.postgres.table
+        ))
+        .await?;
+
+    let pc = pool.clone();
+    let tg_handle = tokio::spawn(async move {
+        init_tg(key, pc).await.expect("Could not initialize telegram bot!")
+    });
+    let server_handle = tokio::spawn(async move {
+        init_server(&cfg, pool).await.expect("Could not initialize server!")
+    });
+
+    let (tg, server) = join!(tg_handle, server_handle);
 
     tg?;
     server?;
@@ -110,6 +131,7 @@ pub struct TelegramConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostgresConfig {
     table: String,
+    host: String,
     username: String,
     password: String
 }
@@ -125,6 +147,7 @@ impl Default for ServerConfig {
             telegram: TelegramConfig { api_key: "<ENTER KEY HERE>".to_string() },
             postgres: PostgresConfig {
                 table: "cardquest".to_string(),
+                host: "localhost".to_string(),
                 username: "<USERNAME>".to_string(),
                 password: "<PASSWORD>".to_string()
             }
