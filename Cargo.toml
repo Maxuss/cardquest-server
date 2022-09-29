@@ -11,6 +11,10 @@ futures-lite = "1.12.0"
 toml = "0.5.9"
 log = "0.4.17"
 lazy_static = "1.4.0"
+thiserror = "1.0.37"
+convert_case = "0.6.0"
+axum-extra = "0.4.0-rc.1"
+axum-macros = "0.3.0-rc.1"
 
 [dependencies.log4rs]
 version = "1.1.1"
@@ -38,7 +42,7 @@ features = ["v4", "serde"]
 
 [dependencies.tokio]
 version = "1.21.1"
-features = ["macros", "fs"]
+features = ["macros","fs"]
 
 [dependencies.axum]
 version = "0.6.0-rc.2"

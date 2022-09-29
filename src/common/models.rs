@@ -9,7 +9,7 @@ pub struct UserRegStage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct User {
+pub struct StoredUser {
     pub card_hash: String,
     pub id: Uuid,
     pub username: String,

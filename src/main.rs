@@ -10,7 +10,8 @@ use log4rs::config::{Appender, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::{init_config, Config};
 use serde::{Deserialize, Serialize};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::ConnectOptions;
 use std::path::Path;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -83,17 +84,15 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = PgPoolOptions::new()
         .max_connections(4)
-        .connect(&format!(
-            "postgresql://{}{}@{}/{}",
-            cfg.postgres.username,
-            if !cfg.postgres.password.is_empty() {
-                format!(":{}", cfg.postgres.password)
-            } else {
-                "".to_string()
-            },
-            cfg.postgres.host,
-            cfg.postgres.table
-        ))
+        .connect_with(
+            PgConnectOptions::new()
+                .host(&cfg.postgres.host)
+                .username(&cfg.postgres.username)
+                .password(&cfg.postgres.password)
+                .database(&cfg.postgres.database)
+                .log_statements(LevelFilter::Off)
+                .to_owned(),
+        )
         .await?;
 
     let pc = pool.clone();
@@ -137,7 +136,7 @@ pub struct TelegramConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostgresConfig {
-    table: String,
+    database: String,
     host: String,
     username: String,
     password: String,
@@ -155,7 +154,7 @@ impl Default for ServerConfig {
                 api_key: "<ENTER KEY HERE>".to_string(),
             },
             postgres: PostgresConfig {
-                table: "cardquest".to_string(),
+                database: "cardquest".to_string(),
                 host: "localhost".to_string(),
                 username: "<USERNAME>".to_string(),
                 password: "<PASSWORD>".to_string(),

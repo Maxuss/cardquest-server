@@ -198,7 +198,8 @@ async fn user_exists(pool: &PgPool, username: &String) -> anyhow::Result<bool> {
     if sqlx::query("SELECT * FROM users WHERE username = $1")
         .bind(username)
         .fetch_optional(pool)
-        .await?.is_some()
+        .await?
+        .is_some()
     {
         Ok(true)
     } else {
