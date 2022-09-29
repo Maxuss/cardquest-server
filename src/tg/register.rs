@@ -195,10 +195,10 @@ pub async fn register(
 }
 
 async fn user_exists(pool: &PgPool, username: &String) -> anyhow::Result<bool> {
-    if let Some(_) = sqlx::query("SELECT * FROM users WHERE username = $1")
+    if sqlx::query("SELECT * FROM users WHERE username = $1")
         .bind(username)
         .fetch_optional(pool)
-        .await?
+        .await?.is_some()
     {
         Ok(true)
     } else {
