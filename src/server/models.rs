@@ -63,3 +63,9 @@ pub struct RegistrationResponse {
     pub token: String,
     pub bot_url: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AnswerResponse {
+    pub correct: bool,
+    pub correct_answer: u8,
+}

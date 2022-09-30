@@ -1,0 +1,22 @@
+[
+  {
+    "question": "Some other category question",
+    "variants": [
+      "Category Variant A",
+      "Variant B",
+      "Variant C",
+      "Variant D"
+    ],
+    "correct_answer": 1
+  },
+  {
+    "question": "Some other question again",
+    "variants": [
+      "abc",
+      "def",
+      "ghi",
+      "jkl"
+    ],
+    "correct_answer": 4
+  }
+]

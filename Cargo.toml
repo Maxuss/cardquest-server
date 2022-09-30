@@ -15,6 +15,7 @@ thiserror = "1.0.37"
 convert_case = "0.6.0"
 axum-extra = "0.4.0-rc.1"
 axum-macros = "0.3.0-rc.1"
+rand = "0.8.5"
 
 [dependencies.log4rs]
 version = "1.1.1"
